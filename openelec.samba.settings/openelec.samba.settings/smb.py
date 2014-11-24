@@ -31,7 +31,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         self.lastEntry = -1
  
         self.sectionsList = 1000
-        self.guiList = 1100
+        self.paramList = 1100
  
         self.guiLists = [1000, 1100]
  
@@ -68,20 +68,9 @@ class smbWindow(xbmcgui.WindowXMLDialog):
 
             self.addMenuItems(self.sambaConfig.keys())
             
-            dictProperties = {
-                                'value': "test value123",
-                                'typ': "text",
-                                'action': 'set_value',                            
-                                }
-            self.addConfigItem("test label123", dictProperties, 1100)
-            dictProperties = {
-                                'value': "true",
-                                'typ': "bool", 
-                                'action': 'set_value',                            
-                                }
-            self.addConfigItem("test bool", dictProperties, 1100)
-            self.getControl(1100).setVisible(True)
-            self.getControl(1000).getSelectedItem().setProperty("listTyp", "1100")
+            #self.getControl(1100).setVisible(True)
+            #self.getControl(1000).getSelectedItem().setProperty("listTyp", "1100")
+            self.buildParameterMenu("global")
  
             self.setFocusId(self.sectionsList)
             self.onFocus(self.sectionsList)
@@ -91,6 +80,24 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             print( traceback.format_exc())
             print("exception on init")
             pass;
+        
+    def buildParameterMenu(self, sectionString):
+        parameters = self.sambaConfig[sectionString]
+        items = []
+        for param in sorted(parameters.keys()):
+            listItem = xbmcgui.ListItem(label = param)
+            listItem.setProperty("value", parameters[param])
+            listItem.setProperty("typ", "text")
+            
+            if(param == "path"):
+                items.insert(0, listItem)
+            else:
+                items.append(listItem)
+        
+        self.getControl(1100).reset()
+        self.getControl(1100).addItems(items = items)
+            
+        
         
     def onClick(self, controlID):
         
@@ -201,18 +208,22 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         
         for section in sorted(sections):
             listItem = xbmcgui.ListItem(label = section)
+            listItem.setProperty("listTyp", "1100")
             
             if section == "global":                
                 listItems.insert(0, listItem)
             else:
                 listItems.append(listItem)
             print("added section: " + section)
-            listItem.setProperty('listTyp', "1000")
                 
         self.getControl(self.sectionsList).addItems(items = listItems)
         
-               
-     
+#     def onControl(self, controlID):
+#         print("oncontori")
+#         if controlID == self.sectionsList:
+#           item = self.getControl(self.sectionsList).getSelectedItem()
+#           print('You selected : ' + item.getLabel())           
+         
     # not used          
     def addMenuItem(self, strName, dictProperties):
  
@@ -228,19 +239,43 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             pass
         
     def onFocus(self, controlID):
+        
+        if(controlID == self.sectionsList):
+            selectedMenu = self.getControl(controlID).getSelectedItem()
+            if(selectedMenu != self.lastMenu):
+                print("Not the same")
+                print("Label:" + selectedMenu.getLabel())
+                self.buildParameterMenu(selectedMenu.getLabel())
+                
+                self.lastMenu = selectedMenu
+                
+                lastMenu = self.getControl(controlID).getSelectedPosition()
+                selectedMenuItem = self.getControl(controlID).getSelectedItem()
+                
+                li = self.getControl(controlID).getListItem(lastMenu)
+                print("Sel mem item:" + selectedMenuItem.getLabel())
+                print("Sel last menu item:" + li.getLabel())
+                
+                
         return
+        
+        
+        lastMenu = self.getControl(controlID).getSelectedPosition()
+        selectedMenuItem = self.getControl(controlID).getSelectedItem()
+        
+        li = self.getControl(controlID).getListItem()
+    
+    
+            
+
         if controlID in self.guiLists:
 
             currentEntry = self.getControl(controlID).getSelectedPosition()
     
             selectedEntry = self.getControl(controlID).getSelectedItem()
-            if controlID == self.guiList:
+            
+            if controlID == self.paramList:
                 self.setProperty('InfoText', selectedEntry.getProperty('InfoText'))
-            else:
-                gl = self.getControl(self.guiList)
-                listItem = xbmcgui.ListItem(label="test label")
-                listItem.setProperty("value", "test")
-                gl.addItem(listItem)
                 
             if currentEntry != self.lastGuiList:
                     self.lastGuiList = currentEntry
@@ -253,7 +288,9 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                 
                 self.setProperty('InfoText', selectedMenuItem.getProperty('InfoText' ))
                                  
-                if lastMenu != self.lastMenu:
+                if lastMenu != self.lastMenu:                    
+                    self.buildParameterMenu(selectedMenuItem.getLabel())
+                    return
 
 #                     if self.lastListType == int(selectedMenuItem.getProperty('listTyp')):
 #                         self.getControl(int(selectedMenuItem.getProperty('listTyp'))).setAnimations( \
@@ -280,7 +317,6 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                             
                     self.getControl(int(selectedMenuItem.getProperty('listTyp'))).setAnimations( \
                         [('conditional', 'effect=fade start=0 end=100 time=100 condition=true')])
-        self.test()
     
     def test(self):
         #self.getControl(1100).reset()
