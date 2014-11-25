@@ -12,6 +12,7 @@ import re
 import sys
 import urllib2
 import traceback
+#import oe
  
 from xml.dom import minidom
  
@@ -20,6 +21,18 @@ __scriptid__ = "openelec.samba.settings";
 __addon__ = xbmcaddon.Addon(id=__scriptid__);
 __cwd__ = __addon__.getAddonInfo('path');
 #__media__ = '%s/resources/skins/default/media/' % __cwd__
+
+CANCEL = (
+    9,
+    10,
+    216,
+    247,
+    257,
+    275,
+    61467,
+    92,
+    61448,
+    )
  
  
 class smbWindow(xbmcgui.WindowXMLDialog):
@@ -80,6 +93,60 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             print( traceback.format_exc())
             print("exception on init")
             pass;
+    
+    def onAction(self, action):
+        print("on action")
+        
+        focusId = self.getFocusId()
+        actionId = int(action.getId())
+
+        if focusId == 2222:
+            if actionId == 61453:
+                return
+
+        if actionId in CANCEL:
+            self.visible = False
+            self.close()
+
+        if focusId == self.paramList:
+
+            curPos = self.getControl(focusId).getSelectedPosition()
+            listSize = self.getControl(focusId).size()
+            newPos = curPos
+            nextItem = self.getControl(focusId).getListItem(newPos)
+
+            if (curPos != self.lastGuiList
+                or nextItem.getProperty('typ') == 'separator') \
+                and actionId in [2, 3, 4]:
+
+                while nextItem.getProperty('typ') == 'separator':
+
+                    if actionId == 2:
+                        newPos = newPos + 1
+
+                    if actionId == 3:
+                        newPos = newPos - 1
+
+                    if actionId == 4:
+                        newPos = newPos + 1
+
+                    if newPos <= 0:
+                        newPos = listSize - 1
+
+                    if newPos >= listSize:
+                        newPos = 0
+
+                    nextItem = \
+                        self.getControl(focusId).getListItem(newPos)
+
+                self.lastGuiList = newPos
+                self.getControl(focusId).selectItem(newPos)
+
+                self.setProperty('InfoText',
+                        nextItem.getProperty('InfoText'))
+
+        if focusId == self.sectionsList:
+            self.setFocusId(focusId)
         
     def buildParameterMenu(self, sectionString):
         parameters = self.sambaConfig[sectionString]
@@ -101,7 +168,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         
     def onClick(self, controlID):
         
-        print("onClick" + str(controlID))
+        print("onClick " + str(controlID))
         
         if controlID in self.guiLists:
             selectedPosition = self.getControl(controlID).getSelectedPosition()
@@ -240,84 +307,42 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         
     def onFocus(self, controlID):
         
+        print("on fokus")
+        
+        if controlID in self.guiLists:
+
+            currentEntry = self.getControl(controlID).getSelectedPosition()
+
+            selectedEntry = self.getControl(controlID).getSelectedItem()
+            if controlID == self.paramList:
+                self.setProperty('InfoText',
+                        selectedEntry.getProperty('InfoText'))
+
+            if currentEntry != self.lastGuiList:
+                self.lastGuiList = currentEntry
+        
         if(controlID == self.sectionsList):
-            selectedMenu = self.getControl(controlID).getSelectedItem()
-            if(selectedMenu != self.lastMenu):
-                print("Not the same")
-                print("Label:" + selectedMenu.getLabel())
-                self.buildParameterMenu(selectedMenu.getLabel())
+            selectedMenuItem = self.getControl(controlID).getSelectedItem()
+            lastMenu = self.getControl(controlID).getSelectedPosition()
+            if(selectedMenuItem != self.lastMenu):
+                self.lastMenu = selectedMenuItem
+                print("Not the same " + str(lastMenu))
+                print("Label:" + selectedMenuItem.getLabel())
+                self.buildParameterMenu(selectedMenuItem.getLabel())          
                 
-                self.lastMenu = selectedMenu
-                
-                lastMenu = self.getControl(controlID).getSelectedPosition()
-                selectedMenuItem = self.getControl(controlID).getSelectedItem()
-                
+              
                 li = self.getControl(controlID).getListItem(lastMenu)
                 print("Sel mem item:" + selectedMenuItem.getLabel())
                 print("Sel last menu item:" + li.getLabel())
+                objList = self.getControl(int(selectedMenuItem.getProperty('listTyp')))
+                self.getControl(controlID).controlRight(objList)
+                #self.setFocusId(1100)
+                #self.setFocusId(self.sectionsList)
                 
                 
         return
         
-        
-        lastMenu = self.getControl(controlID).getSelectedPosition()
-        selectedMenuItem = self.getControl(controlID).getSelectedItem()
-        
-        li = self.getControl(controlID).getListItem()
-    
-    
-            
-
-        if controlID in self.guiLists:
-
-            currentEntry = self.getControl(controlID).getSelectedPosition()
-    
-            selectedEntry = self.getControl(controlID).getSelectedItem()
-            
-            if controlID == self.paramList:
-                self.setProperty('InfoText', selectedEntry.getProperty('InfoText'))
-                
-            if currentEntry != self.lastGuiList:
-                    self.lastGuiList = currentEntry
-                    
-            if controlID == self.sectionsList:
-
-                lastMenu = self.getControl(controlID).getSelectedPosition()
-
-                selectedMenuItem = self.getControl(controlID).getSelectedItem()
-                
-                self.setProperty('InfoText', selectedMenuItem.getProperty('InfoText' ))
-                                 
-                if lastMenu != self.lastMenu:                    
-                    self.buildParameterMenu(selectedMenuItem.getLabel())
-                    return
-
-#                     if self.lastListType == int(selectedMenuItem.getProperty('listTyp')):
-#                         self.getControl(int(selectedMenuItem.getProperty('listTyp'))).setAnimations( \
-#                             [('conditional', 'effect=fade start=100 end=0 time=100 condition=True')])
-#                         
-                    self.getControl(1100).setAnimations( \
-                        [('conditional', 'effect=fade start=0 end=0 time=1 condition=True')])
-                
-                    self.lastMenu = lastMenu
-
-                    for btn in self.buttons:
-                        self.getControl(self.buttons[btn]['id' ]).setVisible(False)
-
-                    #strMenuLoader = selectedMenuItem.getProperty('menuLoader')
-
-                    objList = self.getControl(int(selectedMenuItem.getProperty('listTyp')))
-                    self.getControl(controlID).controlRight(objList)
-# 
-#                     if strMenuLoader != '':
-#                         if hasattr(self.oe.dictModules[selectedMenuItem.getProperty('modul'
-#                                    )], strMenuLoader):
-#                             getattr(self.oe.dictModules[selectedMenuItem.getProperty('modul'
-#                                     )], strMenuLoader)(selectedMenuItem)
-                            
-                    self.getControl(int(selectedMenuItem.getProperty('listTyp'))).setAnimations( \
-                        [('conditional', 'effect=fade start=0 end=100 time=100 condition=true')])
-    
+           
     def test(self):
         #self.getControl(1100).reset()
         dictProperties = {
