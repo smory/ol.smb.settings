@@ -145,12 +145,13 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         if focusId == self.sectionsList:
             self.setFocusId(focusId)
         
-    def buildParameterMenu(self, sectionString):
-        parameters = self.sambaConfig[sectionString]
+    def buildParameterMenu(self, sectionId):
+        parameters = self.sambaConfig[sectionId]
         items = []
         for param in sorted(parameters.keys()):
             listItem = xbmcgui.ListItem(label = param)
             listItem.setProperty("value", parameters[param])
+            listItem.setProperty("sectionId", sectionId)
             
             if(param == "path"):
                 listItem.setProperty("typ", "folder")
@@ -274,6 +275,14 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                     selectedItem.setProperty('value', 'true')
                 else:
                     selectedItem.setProperty('value', '1')
+                    
+            # reflect changes made in gui in config dic    
+            if(strTyp == 'bool'):
+                self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()] = \
+                    ("yes" if selectedItem.getProperty('value') == "1" else "no")
+            else:
+                self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()] = \
+                    selectedItem.getProperty('value')
 
             
         
