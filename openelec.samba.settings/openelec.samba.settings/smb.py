@@ -155,10 +155,19 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             if(param == "path"):
                 listItem.setProperty("typ", "folder")
                 items.insert(0, listItem);
+                continue;
+                
+            elif(re.match("yes|no|true|false", parameters[param], re.IGNORECASE)):
+                listItem.setProperty("typ", "bool")
+                if re.match("yes|true", parameters[param], re.IGNORECASE):
+                    listItem.setProperty("value", "1")
+                else:
+                    listItem.setProperty("value", "0")    
                           
             else:
                 listItem.setProperty("typ", "text")
-                items.append(listItem)
+            
+            items.append(listItem)
         
         self.getControl(1100).reset()
         self.getControl(1100).addItems(items = items)
