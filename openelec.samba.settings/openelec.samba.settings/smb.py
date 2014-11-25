@@ -74,10 +74,6 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             self.sambaConfig = parseConfFile()
 
             self.addMenuItems(self.sambaConfig.keys())
-            
-            #self.getControl(1100).setVisible(True)
-            #self.getControl(1000).getSelectedItem().setProperty("listTyp", "1100")
-            self.buildParameterMenu("global")
  
             self.setFocusId(self.sectionsList)
             self.onFocus(self.sectionsList)
@@ -88,8 +84,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         except Exception, e:
             print(sys.exc_info())
             print( traceback.format_exc())
-            print("exception on init")
-            pass;
+
     
     def onAction(self, action):
         print("on action")
@@ -302,11 +297,6 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                 
         self.getControl(self.sectionsList).addItems(items = listItems)
         
-#     def onControl(self, controlID):
-#         print("oncontori")
-#         if controlID == self.sectionsList:
-#           item = self.getControl(self.sectionsList).getSelectedItem()
-#           print('You selected : ' + item.getLabel())           
          
     # not used          
     def addMenuItem(self, strName, dictProperties):
@@ -324,7 +314,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         
     def onFocus(self, controlID):
         
-        print("on fokus")
+        #print("on fokus")
         
         if controlID in self.guiLists:
 
@@ -343,40 +333,17 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             lastMenu = self.getControl(controlID).getSelectedPosition()
             if(selectedMenuItem != self.lastMenu):
                 self.lastMenu = selectedMenuItem
-                print("Not the same " + str(lastMenu))
-                print("Label:" + selectedMenuItem.getLabel())
+                #print("Not the same " + str(lastMenu))
+                #print("Label:" + selectedMenuItem.getLabel())
                 self.buildParameterMenu(selectedMenuItem.getLabel())          
                 
               
-                li = self.getControl(controlID).getListItem(lastMenu)
-                print("Sel mem item:" + selectedMenuItem.getLabel())
-                print("Sel last menu item:" + li.getLabel())
+                #li = self.getControl(controlID).getListItem(lastMenu)
+                #print("Sel mem item:" + selectedMenuItem.getLabel())
+                #print("Sel last menu item:" + li.getLabel())
                 objList = self.getControl(int(selectedMenuItem.getProperty('listTyp')))
                 self.getControl(controlID).controlRight(objList)
-                #self.setFocusId(1100)
-                #self.setFocusId(self.sectionsList)
-                
-                
-        return
-        
-           
-    def test(self):
-        #self.getControl(1100).reset()
-        dictProperties = {
-                                'value': "test value",
-                                'typ': "text",
-                                'entry': "samba",
-                                'category': "samba 2",
-                                'action': 'set_value',
-                                'order': 1
-                                }
-        print(str(self.getControl(1000).getSelectedItem().getProperty("listTyp")) + " listTyp")
-        self.addConfigItem("test label", dictProperties, 1100)
-        #self.getControl(1000).getSelectedItem().setProperty("listTyp", "1100")
-        print(str(self.getControl(1000).getSelectedItem().getProperty("listTyp")) + " listTyp")
-        self.getControl(1100).setVisible(True)
-        
-                    
+                         
     def addConfigItem(self, strName, dictProperties, strType ):
 
         try:
@@ -389,17 +356,13 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                                     unicode(dictProperties[strProp]))
 
             self.getControl(int(strType)).addItem(lstItem)
-            
-            print("addConfigItem")
-
             return lstItem
+        
         except Exception, e:
             print(e)
             print("exception in adding to list")
             pass;
-            
 
-        
 
 def parseConfFile():
     filePath = "%s/smb.conf" % __cwd__
@@ -442,13 +405,6 @@ def writeConfFile(config):
         text = ((t + text) if section == "global" else (text + t)) 
     print(text)
          
-    
 
-#conf = parseConfFile()
-#a = {"sdfs": "sdf", "c" : "yes"}
-#print(conf)
-#conf["test"] = a
-#writeConfFile(conf)
-#window = xbmcgui.WindowXMLDialog('smbWindow.xml', __cwd__, 'Default');
 window = smbWindow('mainWindow.xml', __cwd__, "Default", isChild=True)
 window.doModal();
