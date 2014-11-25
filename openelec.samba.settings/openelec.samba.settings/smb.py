@@ -48,13 +48,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
  
         self.guiLists = [1000, 1100]
  
-        self.buttons = {
-            1: {'id': 1500, 'modul': '', 'action': ''},
-            2: {'id': 1501, 'modul': '', 'action': ''},
-            3: {'id': 1502, 'modul': '', 'action': ''},
-            4: {'id': 1503, 'modul': '', 'action': ''},
-            5: {'id': 1504, 'modul': '', 'action': ''},
-            }
+        self.buttons = {1500: "add share", 1501 : "disable share", 1502 : "remove share", 1503 : "add parameter", 1504 : "remove parameter"}
  
         self.isChild = False
         self.lastGuiList = -1
@@ -87,6 +81,9 @@ class smbWindow(xbmcgui.WindowXMLDialog):
  
             self.setFocusId(self.sectionsList)
             self.onFocus(self.sectionsList)
+            
+            for id in self.buttons.keys():
+                self.getControl(id).setLabel(self.buttons[id])
  
         except Exception, e:
             print(sys.exc_info())
