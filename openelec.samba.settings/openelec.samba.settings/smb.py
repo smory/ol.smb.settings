@@ -151,11 +151,13 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         for param in sorted(parameters.keys()):
             listItem = xbmcgui.ListItem(label = param)
             listItem.setProperty("value", parameters[param])
-            listItem.setProperty("typ", "text")
             
             if(param == "path"):
-                items.insert(0, listItem)
+                listItem.setProperty("typ", "folder")
+                items.insert(0, listItem);
+                          
             else:
+                listItem.setProperty("typ", "text")
                 items.append(listItem)
         
         self.getControl(1100).reset()
@@ -218,7 +220,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                     '',
                     False,
                     False,
-                    '/storage',
+                    'C:/',
                     )
                 if returnValue != '' and returnValue != '/':
                     selectedItem.setProperty('value',
