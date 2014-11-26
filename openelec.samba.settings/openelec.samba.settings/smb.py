@@ -282,6 +282,9 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             if(controlID == 1500):
                 self.addShare()
                 
+            elif(controlID == 1502):
+                self.removeShare()
+                
 
     
     def addShare(self):
@@ -299,7 +302,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             
         xbmcDialog = xbmcgui.Dialog()
         sharePath = xbmcDialog.browse(
-                    0                 ,
+                    0,
                     'OpenELEC.tv',
                     'files',
                     '',
@@ -322,6 +325,31 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         self.addMenuItem(shareName, params)
         self.sambaConfig[shareName] = params
 
+    def removeShare(self):
+        shares = self.sambaConfig.keys()
+        #shares = []
+        shares.remove("global")
+        shares.sort()
+               
+        selected = xbmcgui.Dialog().select("Choose share", shares)
+        if(selected is None or selected == -1):
+            return
+        
+        shareToDelete = shares[selected]
+        
+        for i in range(0, self.getControl(self.sectionsList).size()):
+            listItem = self.getControl(self.sectionsList).getListItem(i)
+            if(listItem.getLabel() == shareToDelete):
+                self.getControl(self.sectionsList).removeItem(i)
+                print("item removed")
+                break
+            
+        del self.sambaConfig[shareToDelete]
+        
+        # select first item in the menu
+        self.getControl(self.sectionsList).selectItem(0)
+        self.buildParameterMenu(self.getControl(self.sectionsList).getListItem(0).getLabel())                        
+        
         
     def addMenuItems(self, sections):
         print(sections)
