@@ -227,9 +227,8 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                     False,
                     'C:/',
                     )
-                if returnValue != '' and returnValue != '/':
-                    selectedItem.setProperty('value',
-                            unicode(returnValue))
+                if returnValue != '':
+                    selectedItem.setProperty('value', unicode(returnValue))
                     
             elif strTyp == 'ip':
 
@@ -278,8 +277,51 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             else:
                 self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()] = \
                     selectedItem.getProperty('value')
+                    
+        if(controlID in self.buttons.keys()):
+            if(controlID == 1500):
+                self.addShare()
+                
 
+    
+    def addShare(self):
+        
+        shareName = ""
+        sharePath = ""
+        
+        keyboard = xbmc.Keyboard(heading = "Enter share name")
+        keyboard.doModal()        
+
+        if(keyboard.isConfirmed()):
+            shareName = keyboard.getText()
+            if(shareName == ""):
+                return
             
+        xbmcDialog = xbmcgui.Dialog()
+        sharePath = xbmcDialog.browse(
+                    0                 ,
+                    'OpenELEC.tv',
+                    'files',
+                    '',
+                    False,
+                    False,
+                    'C:/',
+                    )
+        
+        if (sharePath == ""):
+            return
+        globalConfig = self.sambaConfig["global"]
+        
+        params = {"path" : sharePath, "available" : "yes"}
+        # take into account global settings with synonyms
+        params["browsable"] = globalConfig["browsable"] if globalConfig.get("browsable") is not None \
+            else globalConfig["browseable"]if globalConfig.get("browseable") is not None else "yes"
+        params["writable"] = globalConfig["writable"] if globalConfig.get("writable") is not None \
+            else globalConfig["writeable"]if globalConfig.get("writeable") is not None else "yes"
+        
+        self.addMenuItem(shareName, params)
+        self.sambaConfig[shareName] = params
+
         
     def addMenuItems(self, sections):
         print(sections)
@@ -294,21 +336,21 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             else:
                 listItems.append(listItem)
             print("added section: " + section)
-                
+            
         self.getControl(self.sectionsList).addItems(items = listItems)
         
          
-    # not used          
     def addMenuItem(self, strName, dictProperties):
  
         try:
  
-            lstItem = xbmcgui.ListItem(label=strName)
+            listItem = xbmcgui.ListItem(label=strName)
+            listItem.setProperty("listTyp", "1100")
  
             for strProp in dictProperties:
-                lstItem.setProperty(strProp, unicode(dictProperties[strProp]))
+                listItem.setProperty(strProp, unicode(dictProperties[strProp]))
  
-            self.getControl(self.sectionsList).addItem(lstItem)
+            self.getControl(self.sectionsList).addItem(listItem)
         except Exception, e:
             pass
         
