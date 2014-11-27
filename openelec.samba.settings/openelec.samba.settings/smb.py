@@ -329,7 +329,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
     def removeShare(self):
         shares = self.sambaConfig.keys()
         #shares = []
-        shares.remove("global")
+        shares.remove("global") # don't allow to remove global settings
         shares.sort()
                
         selected = xbmcgui.Dialog().select("Choose share", shares)
@@ -338,18 +338,22 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         
         shareToDelete = shares[selected]
         
+        selectedInMenu = False
         for i in range(0, self.getControl(self.sectionsList).size()):
             listItem = self.getControl(self.sectionsList).getListItem(i)
             if(listItem.getLabel() == shareToDelete):
+                selectedInMenu = True if self.getControl(self.sectionsList).getSelectedItem().getLabel() == shareToDelete \
+                    else False
                 self.getControl(self.sectionsList).removeItem(i)
                 print("item removed")
                 break
             
         del self.sambaConfig[shareToDelete]
         
-        # select first item in the menu
-        self.getControl(self.sectionsList).selectItem(0)
-        self.buildParameterMenu(self.getControl(self.sectionsList).getListItem(0).getLabel())                        
+        # select first item in the menu if removed share was focused
+        if(selectedInMenu):
+            self.getControl(self.sectionsList).selectItem(0)
+            self.buildParameterMenu(self.getControl(self.sectionsList).getListItem(0).getLabel())                        
         
         
     def addMenuItems(self, sections):
