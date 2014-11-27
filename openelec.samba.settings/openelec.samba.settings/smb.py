@@ -297,7 +297,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
 
         if(keyboard.isConfirmed()):
             shareName = keyboard.getText()
-            if(shareName == ""):
+            if(not shareName):
                 return
             
         xbmcDialog = xbmcgui.Dialog()
@@ -311,12 +311,13 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                     'C:/',
                     )
         
-        if (sharePath == ""):
+        if(not sharePath):
             return
+        
         globalConfig = self.sambaConfig["global"]
         
         params = {"path" : sharePath, "available" : "yes"}
-        # take into account global settings with synonyms
+        # take into account global settings with its synonyms
         params["browsable"] = globalConfig["browsable"] if globalConfig.get("browsable") is not None \
             else globalConfig["browseable"]if globalConfig.get("browseable") is not None else "yes"
         params["writable"] = globalConfig["writable"] if globalConfig.get("writable") is not None \
