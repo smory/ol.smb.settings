@@ -317,11 +317,13 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         globalConfig = self.sambaConfig["global"]
         
         params = {"path" : sharePath, "available" : "yes"}
-        # take into account global settings with its synonyms
+        # take into account global settings with its synonyms in parameters
         params["browsable"] = globalConfig["browsable"] if globalConfig.get("browsable") is not None \
             else globalConfig["browseable"]if globalConfig.get("browseable") is not None else "yes"
         params["writable"] = globalConfig["writable"] if globalConfig.get("writable") is not None \
             else globalConfig["writeable"]if globalConfig.get("writeable") is not None else "yes"
+        param["public"] = globalConfig["public"] if globalConfig.get("public") is not None \
+            else globalConfig["guest ok"]if globalConfig.get("guest ok") is not None else "yes"
         
         self.addMenuItem(shareName, params)
         self.sambaConfig[shareName] = params
