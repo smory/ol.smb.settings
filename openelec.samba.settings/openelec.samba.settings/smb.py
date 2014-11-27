@@ -284,6 +284,9 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                 
             elif(controlID == 1502):
                 self.removeShare()
+            
+            elif(controlID ==1503):
+                self.addParameter()
                 
 
     
@@ -356,6 +359,31 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         if(selectedInMenu):
             self.getControl(self.sectionsList).selectItem(0)
             self.buildParameterMenu(self.getControl(self.sectionsList).getListItem(0).getLabel())                        
+        
+    def addParameter(self):
+        parameter = ""
+        value = ""
+        
+        keyboard = xbmc.Keyboard()
+        keyboard.setHeading("Enter parameter")
+        keyboard.doModal()        
+
+        if(keyboard.isConfirmed()):
+            parameter = keyboard.getText()
+            if(not parameter):
+                return
+            
+        keyboard = xbmc.Keyboard()
+        keyboard.setHeading("Enter value")
+        keyboard.doModal()        
+
+        if(keyboard.isConfirmed()):
+            value = keyboard.getText()
+            if(not value):
+                return
+        section = self.getControl(self.paramList).getSelectedItem().getProperty("sectionId")
+        self.sambaConfig[section][parameter] = value
+        self.buildParameterMenu(section)        
         
         
     def addMenuItems(self, sections):
