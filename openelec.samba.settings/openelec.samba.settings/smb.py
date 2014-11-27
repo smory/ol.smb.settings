@@ -322,7 +322,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             else globalConfig["browseable"]if globalConfig.get("browseable") is not None else "yes"
         params["writable"] = globalConfig["writable"] if globalConfig.get("writable") is not None \
             else globalConfig["writeable"]if globalConfig.get("writeable") is not None else "yes"
-        param["public"] = globalConfig["public"] if globalConfig.get("public") is not None \
+        params["public"] = globalConfig["public"] if globalConfig.get("public") is not None \
             else globalConfig["guest ok"]if globalConfig.get("guest ok") is not None else "yes"
         
         self.addMenuItem(shareName, params)
