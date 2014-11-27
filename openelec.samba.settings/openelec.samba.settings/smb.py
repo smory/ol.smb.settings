@@ -288,6 +288,9 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             elif(controlID ==1503):
                 self.addParameter()
                 
+            elif(controlID ==1504):
+                self.removeParameter()
+                
 
     
     def addShare(self):
@@ -384,6 +387,31 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         section = self.getControl(self.paramList).getSelectedItem().getProperty("sectionId")
         self.sambaConfig[section][parameter] = value
         self.buildParameterMenu(section)        
+        
+    def removeParameter(self):
+        section = self.getControl(self.paramList).getSelectedItem().getProperty("sectionId")
+        params = self.sambaConfig[section].keys()
+        
+        try:
+            params.remove("path")  # prevent user from deleting path parameter
+        except:
+            pass  # no need to handle as only global section could throw
+        
+        params.sort()
+        
+        selected = xbmcgui.Dialog().select("Choose share", params)
+        if(selected is None or selected == -1):
+            return
+        
+        paramToDelete = params[selected]
+        print("param to delete> " + paramToDelete)
+        
+        dialog = xbmcgui.Dialog() 
+        confirmed = dialog.yesno("Confirmation", "Are you sure?")
+        
+        if(confirmed):
+            del self.sambaConfig[section][paramToDelete]
+            self.buildParameterMenu(section)
         
         
     def addMenuItems(self, sections):
