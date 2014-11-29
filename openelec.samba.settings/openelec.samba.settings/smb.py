@@ -396,6 +396,19 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             parameter = keyboard.getText()
             if(not parameter):
                 return
+        
+        cont = True    
+        if(self.sambaDoc is not None):
+            found = self.sambaDoc.get(parameter)
+            if(found is None):
+                xbmcgui.Dialog().ok("OpenELEC", "Parameter is mistyped")
+                cont = False
+                self.addParameter()
+        else:
+            cont = xbmcgui.Dialog().yesno("OpenELEC", "Unable to verify parameter for misspelling.", "Continue?")
+        
+        if(not cont):
+            return
             
         keyboard = xbmc.Keyboard()
         keyboard.setHeading("Enter value")
