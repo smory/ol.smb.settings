@@ -12,6 +12,7 @@ import re
 import sys
 import urllib2
 import traceback
+import threading
 #import oe
  
 from xml.dom import minidom
@@ -48,7 +49,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
  
         self.guiLists = [1000, 1100]
  
-        self.buttons = {1500: "add share", 1501 : "disable share", 1502 : "remove share", 1503 : "add parameter", 1504 : "remove parameter"}
+        self.buttons = {1500: "add share", 1501 : "remove share", 1502 : "parameter info", 1503 : "add parameter", 1504 : "remove parameter"}
  
         self.isChild = False
         self.lastGuiList = -1
@@ -56,6 +57,11 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                
         if 'isChild' in kwargs:
             self.isChild = True
+            
+        self.sambaDoc = None
+        
+        thread = threading.Thread(target = self.parseSambaDoc)
+        thread.start()
  
         pass
  
@@ -80,14 +86,14 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             
             for id in self.buttons.keys():
                 self.getControl(id).setLabel(self.buttons[id])
- 
+             
         except Exception, e:
             print(sys.exc_info())
             print( traceback.format_exc())
 
     
     def onAction(self, action):
-        print("on action")
+        #print("on action")
         
         focusId = self.getFocusId()
         actionId = int(action.getId())
@@ -134,8 +140,8 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                 self.lastGuiList = newPos
                 self.getControl(focusId).selectItem(newPos)
 
-                self.setProperty('InfoText',
-                        nextItem.getProperty('InfoText'))
+                #self.setProperty('InfoText',
+                 #                self.sambaDoc.get(nextItem.getLabel())[1] if self.sambaDoc is not None else "" )
 
         if focusId == self.sectionsList:
             self.setFocusId(focusId)
@@ -282,13 +288,16 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             if(controlID == 1500):
                 self.addShare()
                 
-            elif(controlID == 1502):
+            elif(controlID == 1501):
                 self.removeShare()
+                
+            elif(controlID == 1502):
+                self.showParamInfo()
             
-            elif(controlID ==1503):
+            elif(controlID == 1503):
                 self.addParameter()
                 
-            elif(controlID ==1504):
+            elif(controlID == 1504):
                 self.removeParameter()
                 
 
@@ -363,6 +372,18 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             self.getControl(self.sectionsList).selectItem(0)
             self.buildParameterMenu(self.getControl(self.sectionsList).getListItem(0).getLabel())                        
         
+    def showParamInfo(self):
+        paramName = self.getControl(self.paramList).getSelectedItem().getLabel()
+        text = self.sambaDoc.get(paramName)[1] if self.sambaDoc is not None else "" 
+        window = xbmcgui.WindowXMLDialog("DialogTextViewer.xml", __cwd__, 'Default')
+        window.show()
+        window.getControl(1).setLabel(paramName)
+        window.getControl(5).setText(text)
+        window.doModal()
+        
+        
+        del window;
+        
     def addParameter(self):
         parameter = ""
         value = ""
@@ -399,7 +420,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         
         params.sort()
         
-        selected = xbmcgui.Dialog().select("Choose share", params)
+        selected = xbmcgui.Dialog().select("Choose parameter", params)
         if(selected is None or selected == -1):
             return
         
@@ -495,6 +516,42 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             print(e)
             print("exception in adding to list")
             pass;
+        
+    
+    def parseSambaDoc(self):
+    
+        regexParamName = "<h3.*?</a>\s*([\w\s]+?)\s?(\((G|S)\))?\s*</h3>"
+        regexParamPart = "<div\sclass=\"section\"(.*?</dd>)</dl></div></div>"
+        regexParamDesc = "<dd>.*?</dd>"
+        
+        data = urllib2.urlopen("http://www.samba.org/samba/docs/man/manpages/smb.conf.5.html")
+        source = data.read()
+        
+        sourceEntries = re.findall(regexParamPart, source, re.MULTILINE | re.DOTALL)
+        del source, data
+        
+        dic = {}
+        for entry in sourceEntries:
+            
+            paramNameMatch = re.search(regexParamName, entry, re.MULTILINE | re.DOTALL)
+            
+            if(paramNameMatch):
+                paramName = paramNameMatch.group(1)
+                paramSection = paramNameMatch.group(3)            
+                
+                decsHtml = re.search(regexParamDesc, entry, re.MULTILINE | re.DOTALL)          
+                description  = ""
+                description = re.sub("<.*?>", "", decsHtml.group(0), flags = re.MULTILINE | re.DOTALL)
+                description = re.sub("\s{2,}", " ", description, flags = re.MULTILINE | re.DOTALL)
+                description = description.strip()
+                    
+                dic[paramName]= [paramSection, description]
+                del paramNameMatch, paramName, paramSection, description, decsHtml
+                
+        del sourceEntries
+        print("samba doc done")
+        self.sambaDoc = dic
+        return(dic)
 
 
 def parseConfFile():
