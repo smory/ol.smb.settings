@@ -37,6 +37,8 @@ CANCEL = (
  
  
 class smbWindow(xbmcgui.WindowXMLDialog):
+    
+    multipleOcurenceParams = ("preexec", "exec", "postexec", "root preexec", "root postexec",)
  
     def __init__(self, *args, **kwargs):
  
@@ -105,6 +107,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         if actionId in CANCEL:
             self.visible = False
             self.close()
+            writeConfFile(self.sambaConfig)
 
         if focusId == self.paramList:
 
@@ -150,26 +153,42 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         parameters = self.sambaConfig[sectionId]
         items = []
         for param in sorted(parameters.keys()):
-            listItem = xbmcgui.ListItem(label = param)
-            listItem.setProperty("value", parameters[param])
-            listItem.setProperty("sectionId", sectionId)
             
-            if(param == "path"):
-                listItem.setProperty("typ", "folder")
-                items.insert(0, listItem);
-                continue;
+            if(param in self.multipleOcurenceParams):
+                values = parameters[param]
                 
-            elif(re.match("yes|no|true|false", parameters[param], re.IGNORECASE)):
-                listItem.setProperty("typ", "bool")
-                if re.match("yes|true", parameters[param], re.IGNORECASE):
-                    listItem.setProperty("value", "1")
-                else:
-                    listItem.setProperty("value", "0")    
-                          
-            else:
-                listItem.setProperty("typ", "text")
+                for value in values:
+                    listItem = xbmcgui.ListItem(label = param)
+                    listItem.setProperty("value", value)
+                    listItem.setProperty("sectionId", sectionId)
+                    listItem.setProperty("typ", "text")
+                    items.append(listItem)
+                continue
             
-            items.append(listItem)
+            else:
+            
+                listItem = xbmcgui.ListItem(label = param)
+                listItem.setProperty("value", parameters[param])
+                listItem.setProperty("sectionId", sectionId)
+                
+                
+                
+                if(param == "path"):
+                    listItem.setProperty("typ", "folder")
+                    items.insert(0, listItem);
+                    continue;
+                    
+                elif(re.match("yes|no|true|false", parameters[param], re.IGNORECASE)):
+                    listItem.setProperty("typ", "bool")
+                    if re.match("yes|true", parameters[param], re.IGNORECASE):
+                        listItem.setProperty("value", "1")
+                    else:
+                        listItem.setProperty("value", "0")    
+                              
+                else:
+                    listItem.setProperty("typ", "text")
+                
+                items.append(listItem)
         
         self.getControl(1100).reset()
         self.getControl(1100).addItems(items = items)
@@ -281,8 +300,14 @@ class smbWindow(xbmcgui.WindowXMLDialog):
                 self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()] = \
                     ("yes" if selectedItem.getProperty('value') == "1" else "no")
             else:
-                self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()] = \
-                    selectedItem.getProperty('value')
+                if(selectedItem.getLabel() in self.multipleOcurenceParams):
+                    index = self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()].index(strValue)
+                    self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()].remove(strValue)
+                    self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()].insert(index, 
+                        selectedItem.getProperty('value'))                    
+                else:    
+                    self.sambaConfig[selectedItem.getProperty("sectionId")][selectedItem.getLabel()] = \
+                        selectedItem.getProperty('value')
                     
         if(controlID in self.buttons.keys()):
             if(controlID == 1500):
@@ -300,8 +325,6 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             elif(controlID == 1504):
                 self.removeParameter()
                 
-
-    
     def addShare(self):
         
         shareName = ""
@@ -419,7 +442,17 @@ class smbWindow(xbmcgui.WindowXMLDialog):
             if(not value):
                 return
         section = self.getControl(self.paramList).getSelectedItem().getProperty("sectionId")
-        self.sambaConfig[section][parameter] = value
+        
+        if(parameter in self.multipleOcurenceParams):
+            
+            if(self.sambaConfig[section].get(parameter) is None):
+                self.sambaConfig[section][parameter] = [value]
+            else:
+                self.sambaConfig[section][parameter].append(value)
+                
+        else:
+            self.sambaConfig[section][parameter] = value
+            
         self.buildParameterMenu(section)        
         
     def removeParameter(self):
@@ -429,7 +462,7 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         try:
             params.remove("path")  # prevent user from deleting path parameter
         except:
-            pass  # no need to handle as only global section could throw
+            pass  # no need to handle as only global section could throw exception
         
         params.sort()
         
@@ -440,13 +473,27 @@ class smbWindow(xbmcgui.WindowXMLDialog):
         paramToDelete = params[selected]
         print("param to delete> " + paramToDelete)
         
+        multiParamValue = None
+        if(paramToDelete in self.multipleOcurenceParams
+            and len(self.sambaConfig[section].get(paramToDelete)) > 1):
+            selected = xbmcgui.Dialog().select("Choose value", self.sambaConfig[section].get(paramToDelete))
+            if(selected is None or selected == -1):
+                return
+            multiParamValue = self.sambaConfig[section].get(paramToDelete)[selected]
+            
+        
         dialog = xbmcgui.Dialog() 
         confirmed = dialog.yesno("Confirmation", "Are you sure?")
         
         if(confirmed):
-            del self.sambaConfig[section][paramToDelete]
+            
+            if(paramToDelete in self.multipleOcurenceParams
+               and len(self.sambaConfig[section].get(paramToDelete)) > 1):
+                self.sambaConfig[section].get(paramToDelete).remove(multiParamValue)
+            else:
+                del self.sambaConfig[section][paramToDelete]
+                
             self.buildParameterMenu(section)
-        
         
     def addMenuItems(self, sections):
         print(sections)
@@ -591,7 +638,17 @@ def parseConfFile():
                 continue;
             
             param, value = paramWithValue.split("=", 1)
-            paramsDic[param.strip()] = value.strip()
+            param = param.strip()
+            
+            if(param in smbWindow.multipleOcurenceParams):
+                
+                if(paramsDic.get(param) is None):
+                   paramsDic[param] = [value.strip()]
+                else:
+                    paramsDic[param].append(value.strip())
+            
+            else:                               
+                paramsDic[param] = value.strip()
         parsedDic[section[0]] = paramsDic;
         
     return parsedDic
@@ -600,13 +657,21 @@ def writeConfFile(config):
     text = ""
 
     for section in config.keys():
+        
         t = "[" + section + "]\n"
         #print(section)
         params = config[section];
+        
         for param, value in config[section].items():
-            t = t + "\t" + param + " = " + value + "\n"
-        text = ((t + text) if section == "global" else (text + t)) 
-    print(text)
+            
+            if(param in smbWindow.multipleOcurenceParams):
+                for v in value:
+                    t = t + "\t" + param + " = " + v + "\n"
+            else:
+                t = t + "\t" + param + " = " + value + "\n"
+        text = ((t + text) if section == "global" else (text + t))
+        
+        print(text)
          
 
 window = smbWindow('mainWindow.xml', __cwd__, "Default", isChild=True)
