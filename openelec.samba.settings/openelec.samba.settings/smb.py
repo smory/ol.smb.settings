@@ -656,13 +656,12 @@ def parseConfFile():
 def writeConfFile(config):
     text = ""
 
-    for section in config.keys():
+    for section in sorted(config.keys()):
         
         t = "[" + section + "]\n"
-        #print(section)
-        params = config[section];
         
-        for param, value in config[section].items():
+        for param in sorted(config[section]):
+            value = config[section][param]
             
             if(param in smbWindow.multipleOcurenceParams):
                 for v in value:
